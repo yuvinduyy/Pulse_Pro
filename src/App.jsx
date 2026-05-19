@@ -58,6 +58,20 @@ const INITIAL_EXERCISES = [
 
 const API_BASE = 'http://localhost:5000/api';
 
+// Helper to calculate age from date of birth
+const calculateAge = (dobString) => {
+  if (!dobString) return 23;
+  const birthDate = new Date(dobString);
+  if (isNaN(birthDate.getTime())) return 23;
+  const today = new Date();
+  let calculatedAge = today.getFullYear() - birthDate.getFullYear();
+  const m = today.getMonth() - birthDate.getMonth();
+  if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+    calculatedAge--;
+  }
+  return calculatedAge;
+};
+
 function App() {
   // App States
   const [screen, setScreen] = useState('splash'); // 'splash', 'login', 'register', 'dashboard', 'bmi', 'diet', 'exercise', 'calories', 'community', 'profile', 'trainer-chat'
@@ -175,13 +189,21 @@ function App() {
       setEmail(currentUser.email || '');
       setHeight(currentUser.height || 172);
       setWeight(currentUser.weight || 76);
-      setAge(currentUser.age || 23);
+      setAge(calculateAge(currentUser.dob) || currentUser.age || 23);
       setLocation(currentUser.location || 'Sri Lanka');
       
       // Load user plans & messages
       fetchUserPlansAndMessages(currentUser);
     }
   }, [currentUser, isUsingServer]);
+
+  // Update age dynamically whenever dob changes
+  useEffect(() => {
+    if (dob) {
+      const calculated = calculateAge(dob);
+      setAge(calculated);
+    }
+  }, [dob]);
 
   // Scroll to bottom of chat when messages change
   useEffect(() => {
@@ -413,6 +435,8 @@ function App() {
     e.preventDefault();
     if (!currentUser) return;
 
+    const calculatedAge = calculateAge(dob);
+
     if (isUsingServer) {
       try {
         const res = await fetch(`${API_BASE}/profile/${currentUser.id}`, {
@@ -430,7 +454,7 @@ function App() {
         });
         if (res.ok) {
           const updatedUser = { 
-            ...currentUser, first_name: firstName, last_name: lastName, dob, address, tel_no: telNo, email 
+            ...currentUser, first_name: firstName, last_name: lastName, dob, address, tel_no: telNo, email, age: calculatedAge
           };
           setCurrentUser(updatedUser);
           alert('Profile details saved to SQLite Database!');
@@ -448,10 +472,11 @@ function App() {
         localUsers[idx].address = address;
         localUsers[idx].tel_no = telNo;
         localUsers[idx].email = email;
+        localUsers[idx].age = calculatedAge;
         localStorage.setItem('pulsepro_users', JSON.stringify(localUsers));
         
         setCurrentUser({ 
-          ...currentUser, first_name: firstName, last_name: lastName, dob, address, tel_no: telNo, email 
+          ...currentUser, first_name: firstName, last_name: lastName, dob, address, tel_no: telNo, email, age: calculatedAge
         });
         alert('Profile saved to Local Database!');
       }

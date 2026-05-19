@@ -81,6 +81,9 @@ INSERT INTO users (id, role, username, password, email, first_name, last_name, d
 VALUES (2, 'user', 'Yuvindu', 'password123', 'Yu.ccpa@hotmail.com', 'Yuvindu', 'Senanayake', '2003-07-14', 'Colombo, Sri Lanka', '0771234567', 172.0, 76.0, 23, 'Sri Lanka', 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=150')
 ON CONFLICT (username) DO UPDATE SET role = EXCLUDED.role;
 
+-- Fix primary key identity sequence generator after seeding manual IDs 1 and 2
+ALTER TABLE users ALTER COLUMN id RESTART WITH 3;
+
 -- Seed Initial Real-Time Messages Chat History
 INSERT INTO messages (sender_id, receiver_id, message)
 VALUES 

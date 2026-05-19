@@ -173,6 +173,20 @@ function initializeDatabase() {
 
 // REST API Endpoints with Supabase / SQLite Dual Capability
 
+// Helper to calculate age from Date of Birth
+function calculateAge(dobString) {
+  if (!dobString) return 23;
+  const birthDate = new Date(dobString);
+  if (isNaN(birthDate.getTime())) return 23;
+  const today = new Date();
+  let age = today.getFullYear() - birthDate.getFullYear();
+  const m = today.getMonth() - birthDate.getMonth();
+  if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+    age--;
+  }
+  return age;
+}
+
 // Helper to log DB active mode
 app.get('/api/db-status', (req, res) => {
   res.json({
@@ -189,9 +203,10 @@ app.post('/api/auth/register', async (req, res) => {
     return res.status(400).json({ error: 'Missing required fields' });
   }
 
+  const defaultDob = '2003-07-14';
   const defaultHeight = 170;
   const defaultWeight = 70;
-  const defaultAge = 25;
+  const defaultAge = calculateAge(defaultDob);
   const defaultLocation = 'Sri Lanka';
   const defaultPic = 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150';
 
@@ -217,6 +232,7 @@ app.post('/api/auth/register', async (req, res) => {
           email: email || '', 
           first_name: first_name || username, 
           last_name: last_name || '', 
+          dob: defaultDob,
           height: defaultHeight, 
           weight: defaultWeight, 
           age: defaultAge, 
@@ -234,9 +250,9 @@ app.post('/api/auth/register', async (req, res) => {
   } else {
     // Local SQLite Fallback
     db.run(`
-      INSERT INTO users (role, username, password, email, first_name, last_name, height, weight, age, location, profile_pic)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `, [role, username, password, email || '', first_name || '', last_name || '', defaultHeight, defaultWeight, defaultAge, defaultLocation, defaultPic], function(err) {
+      INSERT INTO users (role, username, password, email, first_name, last_name, dob, height, weight, age, location, profile_pic)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `, [role, username, password, email || '', first_name || '', last_name || '', defaultDob, defaultHeight, defaultWeight, defaultAge, defaultLocation, defaultPic], function(err) {
       if (err) {
         if (err.message.includes('UNIQUE constraint failed')) {
           return res.status(400).json({ error: 'Username already exists' });
@@ -245,7 +261,7 @@ app.post('/api/auth/register', async (req, res) => {
       }
       
       const userId = this.lastID;
-      db.get("SELECT id, role, username, email, first_name, last_name, height, weight, age, location, profile_pic FROM users WHERE id = ?", [userId], (err, user) => {
+      db.get("SELECT id, role, username, email, first_name, last_name, dob, height, weight, age, location, profile_pic FROM users WHERE id = ?", [userId], (err, user) => {
         if (err) return res.status(500).json({ error: err.message });
         res.status(201).json({ message: 'User registered in SQLite successfully', user });
       });
@@ -326,16 +342,17 @@ app.get('/api/profile/:id', async (req, res) => {
 app.put('/api/profile/:id', async (req, res) => {
   const userId = Number(req.params.id);
   const { first_name, last_name, dob, address, tel_no, email, username } = req.body;
+  const age = calculateAge(dob);
 
   if (supabase) {
     try {
       const { error } = await supabase
         .from('users')
-        .update({ first_name, last_name, dob, address, tel_no, email, username })
+        .update({ first_name, last_name, dob, address, tel_no, email, username, age })
         .eq('id', userId);
 
       if (error) throw error;
-      res.json({ message: 'Profile updated on Supabase successfully' });
+      res.json({ message: 'Profile updated on Supabase successfully', age });
     } catch (err) {
       res.status(500).json({ error: err.message });
     }
@@ -343,11 +360,11 @@ app.put('/api/profile/:id', async (req, res) => {
     // SQLite Fallback
     db.run(`
       UPDATE users 
-      SET first_name = ?, last_name = ?, dob = ?, address = ?, tel_no = ?, email = ?, username = ?
+      SET first_name = ?, last_name = ?, dob = ?, address = ?, tel_no = ?, email = ?, username = ?, age = ?
       WHERE id = ?
-    `, [first_name, last_name, dob, address, tel_no, email, username, userId], function(err) {
+    `, [first_name, last_name, dob, address, tel_no, email, username, age, userId], function(err) {
       if (err) return res.status(500).json({ error: err.message });
-      res.json({ message: 'Profile updated in SQLite successfully' });
+      res.json({ message: 'Profile updated in SQLite successfully', age });
     });
   }
 });
