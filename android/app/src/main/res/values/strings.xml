@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">PulsePro</string>
+    <string name="title_activity_main">PulsePro</string>
+    <string name="package_name">com.pulsepro.app</string>
+    <string name="custom_url_scheme">com.pulsepro.app</string>
+</resources>
