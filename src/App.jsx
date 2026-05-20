@@ -316,7 +316,7 @@ function App() {
       // Local Database Fallback Logic
       const localUsers = JSON.parse(localStorage.getItem('pulsepro_users') || '[]');
       const match = localUsers.find(
-        u => u.username.toLowerCase() === username.toLowerCase() && 
+        u => (u.username.toLowerCase() === username.toLowerCase() || (u.email && u.email.toLowerCase() === username.toLowerCase())) && 
              u.password === password && 
              u.role === targetRole
       );
@@ -332,8 +332,8 @@ function App() {
   const handleRegister = async (e) => {
     e.preventDefault();
     setErrorMsg('');
-    if (!regUsername || !regPassword) {
-      setErrorMsg('Please fill in username and password');
+    if (!regUsername || !regPassword || !regEmail) {
+      setErrorMsg('Please fill in username, email, and password');
       return;
     }
 
@@ -803,7 +803,7 @@ function App() {
 
                   <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                     <div className="input-group">
-                      <label>Username</label>
+                      <label>Email Address or Username</label>
                       <div className="input-wrapper">
                         <span className="input-icon-left"><User size={18} /></span>
                         <input 
@@ -811,7 +811,7 @@ function App() {
                           value={username}
                           onChange={(e) => setUsername(e.target.value)}
                           className="app-input" 
-                          placeholder="Username1122" 
+                          placeholder="name@email.com or username" 
                           required
                         />
                       </div>
@@ -905,6 +905,7 @@ function App() {
                           onChange={(e) => setRegEmail(e.target.value)}
                           className="app-input" 
                           placeholder="name@email.com" 
+                          required
                         />
                       </div>
                     </div>

@@ -273,7 +273,7 @@ app.post('/api/auth/register', async (req, res) => {
 app.post('/api/auth/login', async (req, res) => {
   const { username, password, role } = req.body;
   if (!username || !password || !role) {
-    return res.status(400).json({ error: 'Missing username, password, or role' });
+    return res.status(400).json({ error: 'Missing email/username, password, or role' });
   }
 
   if (supabase) {
@@ -281,14 +281,14 @@ app.post('/api/auth/login', async (req, res) => {
       const { data, error } = await supabase
         .from('users')
         .select('*')
-        .eq('username', username)
         .eq('password', password)
         .eq('role', role)
+        .or(`username.eq."${username}",email.eq."${username}"`)
         .maybeSingle();
 
       if (error) throw error;
       if (!data) {
-        return res.status(401).json({ error: 'Invalid username, password, or role selection on Supabase' });
+        return res.status(401).json({ error: 'Invalid email, username, password, or role selection on Supabase' });
       }
       
       const safeUser = { ...data };
@@ -299,7 +299,7 @@ app.post('/api/auth/login', async (req, res) => {
     }
   } else {
     // SQLite Fallback
-    db.get("SELECT * FROM users WHERE username = ? AND password = ? AND role = ?", [username, password, role], (err, user) => {
+    db.get("SELECT * FROM users WHERE (username = ? OR email = ?) AND password = ? AND role = ?", [username, username, password, role], (err, user) => {
       if (err) return res.status(500).json({ error: err.message });
       if (!user) return res.status(401).json({ error: 'Invalid credentials' });
       
