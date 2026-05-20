@@ -69,7 +69,7 @@ const INITIAL_EXERCISES = [
   { id: 4, user_id: 2, name: 'Barbell Squats', sets: 4, reps: 10, duration: 20 }
 ];
 
-const API_BASE = 'http://localhost:5000/api';
+const API_BASE = '/api';
 
 // Helper to calculate age from date of birth
 const calculateAge = (dobString) => {
