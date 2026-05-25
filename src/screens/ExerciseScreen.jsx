@@ -1,8 +1,6 @@
-import React from 'react';
 import { ArrowLeft, Plus, Activity, Flame, Home, Smile, User } from 'lucide-react';
 
 export default function ExerciseScreen({
-  currentUser,
   setScreen,
   exercises,
   showExerciseModal,

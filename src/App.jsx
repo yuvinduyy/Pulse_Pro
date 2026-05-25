@@ -1,11 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { 
-  Activity, Apple, ArrowLeft, ArrowRight, Award, 
-  ChevronRight, Dumbbell, Eye, EyeOff, Flame, 
-  Heart, Home, Lock, LogIn, LogOut, MapPin, 
-  Menu, MessageSquare, Phone, Plus, RefreshCw, 
-  Send, Smile, User, Users, Utensils, Calendar, Trash2, Settings
-} from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { Settings } from 'lucide-react';
 import './App.css';
 
 // Import split-out screen components
@@ -164,18 +158,6 @@ function App() {
   const [newPostText, setNewPostText] = useState('');
   const [showPostModal, setShowPostModal] = useState(false);
 
-  // Initialize and check Server connectivity
-  useEffect(() => {
-    checkServerConnection();
-    // Load local storage fallbacks if server offline
-    if (!localStorage.getItem('pulsepro_users')) {
-      localStorage.setItem('pulsepro_users', JSON.stringify([DEFAULT_USER_DATA, DEFAULT_TRAINER_DATA]));
-      localStorage.setItem('pulsepro_messages', JSON.stringify(INITIAL_MESSAGES));
-      localStorage.setItem('pulsepro_diets', JSON.stringify(INITIAL_DIETS));
-      localStorage.setItem('pulsepro_exercises', JSON.stringify(INITIAL_EXERCISES));
-    }
-  }, []);
-
   const checkServerConnection = async () => {
     try {
       const res = await fetch(`${API_BASE}/profile/2`);
@@ -186,55 +168,41 @@ function App() {
         throw new Error('Server returned error');
       }
     } catch (e) {
+      console.error(e);
       setIsUsingServer(false);
       setServerStatus('Server Offline. Running in Local SQLite-Mock Database.');
     }
   };
 
-  // Sync profile details states once logged in
-  useEffect(() => {
-    if (currentUser) {
-      setFirstName(currentUser.first_name || '');
-      setLastName(currentUser.last_name || '');
-      setDob(currentUser.dob || '');
-      setAddress(currentUser.address || '');
-      setTelNo(currentUser.tel_no || '');
-      setEmail(currentUser.email || '');
-      setHeight(currentUser.height || 172);
-      setWeight(currentUser.weight || 76);
-      setAge(calculateAge(currentUser.dob) || currentUser.age || 23);
-      setLocation(currentUser.location || 'Sri Lanka');
-      
-      // Load user plans & messages
-      fetchUserPlansAndMessages(currentUser);
-    }
-  }, [currentUser, isUsingServer]);
+  const fetchChatMessages = async (userObj = currentUser) => {
+    if (!userObj) return;
 
-  // Update age dynamically whenever dob changes
-  useEffect(() => {
-    if (dob) {
-      const calculated = calculateAge(dob);
-      setAge(calculated);
+    let userId, trainerId;
+    if (userObj.role === 'trainer') {
+      if (!selectedClient) return;
+      userId = selectedClient.id;
+      trainerId = userObj.id;
+    } else {
+      userId = userObj.id;
+      trainerId = 1; // Default Coach John
     }
-  }, [dob]);
 
-  // Scroll to bottom of chat when messages change
-  useEffect(() => {
-    if (chatBottomRef.current) {
-      chatBottomRef.current.scrollIntoView({ behavior: 'smooth' });
+    if (isUsingServer) {
+      try {
+        const res = await fetch(`${API_BASE}/chat/messages?user_id=${userId}&trainer_id=${trainerId}`);
+        if (res.ok) setMessages(await res.json());
+      } catch (e) {
+        console.error('Error loading chat messages', e);
+      }
+    } else {
+      const localMsgs = JSON.parse(localStorage.getItem('pulsepro_messages') || '[]');
+      const filtered = localMsgs.filter(
+        m => (m.sender_id === userId && m.receiver_id === trainerId) || 
+             (m.sender_id === trainerId && m.receiver_id === userId)
+      );
+      setMessages(filtered);
     }
-  }, [messages, screen]);
-
-  // Polling chat every 3 seconds if inside chat
-  useEffect(() => {
-    let interval;
-    if (currentUser && (screen === 'trainer-chat') ) {
-      interval = setInterval(() => {
-        fetchChatMessages();
-      }, 3000);
-    }
-    return () => clearInterval(interval);
-  }, [screen, currentUser, selectedClient]);
+  };
 
   const fetchUserPlansAndMessages = async (user) => {
     if (isUsingServer) {
@@ -272,35 +240,72 @@ function App() {
     fetchChatMessages(user);
   };
 
-  const fetchChatMessages = async (userObj = currentUser) => {
-    if (!userObj) return;
-
-    let userId, trainerId;
-    if (userObj.role === 'trainer') {
-      if (!selectedClient) return;
-      userId = selectedClient.id;
-      trainerId = userObj.id;
-    } else {
-      userId = userObj.id;
-      trainerId = 1; // Default Coach John
+  // Initialize and check Server connectivity
+  useEffect(() => {
+    setTimeout(() => {
+      checkServerConnection();
+    }, 0);
+    // Load local storage fallbacks if server offline
+    if (!localStorage.getItem('pulsepro_users')) {
+      localStorage.setItem('pulsepro_users', JSON.stringify([DEFAULT_USER_DATA, DEFAULT_TRAINER_DATA]));
+      localStorage.setItem('pulsepro_messages', JSON.stringify(INITIAL_MESSAGES));
+      localStorage.setItem('pulsepro_diets', JSON.stringify(INITIAL_DIETS));
+      localStorage.setItem('pulsepro_exercises', JSON.stringify(INITIAL_EXERCISES));
     }
+  }, []);
 
-    if (isUsingServer) {
-      try {
-        const res = await fetch(`${API_BASE}/chat/messages?user_id=${userId}&trainer_id=${trainerId}`);
-        if (res.ok) setMessages(await res.json());
-      } catch (e) {
-        console.error('Error loading chat messages', e);
-      }
-    } else {
-      const localMsgs = JSON.parse(localStorage.getItem('pulsepro_messages') || '[]');
-      const filtered = localMsgs.filter(
-        m => (m.sender_id === userId && m.receiver_id === trainerId) || 
-             (m.sender_id === trainerId && m.receiver_id === userId)
-      );
-      setMessages(filtered);
+  // Sync profile details states once logged in
+  useEffect(() => {
+    if (currentUser) {
+      setTimeout(() => {
+        setFirstName(currentUser.first_name || '');
+        setLastName(currentUser.last_name || '');
+        setDob(currentUser.dob || '');
+        setAddress(currentUser.address || '');
+        setTelNo(currentUser.tel_no || '');
+        setEmail(currentUser.email || '');
+        setHeight(currentUser.height || 172);
+        setWeight(currentUser.weight || 76);
+        setAge(calculateAge(currentUser.dob) || currentUser.age || 23);
+        setLocation(currentUser.location || 'Sri Lanka');
+      }, 0);
+      
+      // Load user plans & messages
+      setTimeout(() => {
+        fetchUserPlansAndMessages(currentUser);
+      }, 0);
     }
-  };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentUser, isUsingServer]);
+
+  // Update age dynamically whenever dob changes
+  useEffect(() => {
+    if (dob) {
+      const calculated = calculateAge(dob);
+      setTimeout(() => {
+        setAge(calculated);
+      }, 0);
+    }
+  }, [dob]);
+
+  // Scroll to bottom of chat when messages change
+  useEffect(() => {
+    if (chatBottomRef.current) {
+      chatBottomRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [messages, screen]);
+
+  // Polling chat every 3 seconds if inside chat
+  useEffect(() => {
+    let interval;
+    if (currentUser && (screen === 'trainer-chat') ) {
+      interval = setInterval(() => {
+        fetchChatMessages();
+      }, 3000);
+    }
+    return () => clearInterval(interval);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [screen, currentUser, selectedClient]);
 
   // Auth Operations
   const handleLogin = async (e) => {
@@ -323,6 +328,7 @@ function App() {
           setErrorMsg(data.error || 'Authentication failed');
         }
       } catch (err) {
+        console.error(err);
         setErrorMsg('Network error connecting to API');
       }
     } else {
@@ -371,6 +377,7 @@ function App() {
           setErrorMsg(data.error || 'Registration failed');
         }
       } catch (err) {
+        console.error(err);
         setErrorMsg('Network error connecting to registration API');
       }
     } else {
@@ -424,6 +431,7 @@ function App() {
           alert('Metrics saved successfully!');
         }
       } catch (err) {
+        console.error(err);
         alert('Failed to save to database server');
       }
     } else {
@@ -473,6 +481,7 @@ function App() {
           alert('Profile details saved to SQLite Database!');
         }
       } catch (err) {
+        console.error(err);
         alert('Failed to update server profile');
       }
     } else {

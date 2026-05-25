@@ -1,8 +1,6 @@
-import React from 'react';
 import { ArrowLeft, Plus, Home, Smile, User } from 'lucide-react';
 
 export default function DietScreen({
-  currentUser,
   setScreen,
   diets,
   selectedDay,

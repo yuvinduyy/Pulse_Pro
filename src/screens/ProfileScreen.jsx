@@ -1,4 +1,3 @@
-import React from 'react';
 import { User, Smile, Lock, ChevronRight, Home } from 'lucide-react';
 
 export default function ProfileScreen({

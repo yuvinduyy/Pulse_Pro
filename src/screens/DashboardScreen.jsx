@@ -1,4 +1,3 @@
-import React from 'react';
 import { LogOut, Smile, ChevronRight, Home, User } from 'lucide-react';
 
 export default function DashboardScreen({

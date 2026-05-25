@@ -1,4 +1,3 @@
-import React from 'react';
 import { User, Smile, Lock, ArrowRight } from 'lucide-react';
 
 export default function RegisterScreen({

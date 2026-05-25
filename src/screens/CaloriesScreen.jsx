@@ -1,8 +1,6 @@
-import React from 'react';
 import { ArrowLeft, Home, Smile, User } from 'lucide-react';
 
 export default function CaloriesScreen({
-  currentUser,
   setScreen,
   caloriePercent,
   burnPercent,

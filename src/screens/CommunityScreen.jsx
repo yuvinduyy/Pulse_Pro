@@ -1,4 +1,3 @@
-import React from 'react';
 import { ArrowLeft, Heart, MessageSquare, Plus, Home, Smile, User } from 'lucide-react';
 
 export default function CommunityScreen({

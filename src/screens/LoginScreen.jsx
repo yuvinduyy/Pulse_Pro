@@ -1,4 +1,3 @@
-import React from 'react';
 import { User, Lock, Eye, EyeOff, ArrowRight } from 'lucide-react';
 
 export default function LoginScreen({

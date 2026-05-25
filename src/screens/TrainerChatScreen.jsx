@@ -1,4 +1,3 @@
-import React from 'react';
 import { ArrowLeft, Smile, Send, Home, User } from 'lucide-react';
 
 export default function TrainerChatScreen({

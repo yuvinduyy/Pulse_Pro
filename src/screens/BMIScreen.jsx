@@ -1,4 +1,3 @@
-import React from 'react';
 import { ArrowLeft, Menu, Activity, Award, Utensils, User, Home, Smile } from 'lucide-react';
 
 export default function BMIScreen({
